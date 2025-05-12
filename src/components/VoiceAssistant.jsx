@@ -7,9 +7,11 @@ const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
 
 export default function VoiceAssistant() {
   const audioRef = useRef(null);
-  const [status, setStatus] = useState("idle"); // idle | listening | processing
   const [userName, setUserName] = useState("Manoj");
   const [tone, setTone] = useState("flirty");
+
+  // Use ref to track status value
+  const statusRef = useRef("idle"); // idle | listening | processing
 
   const recognitionRef = useRef(null);
 
@@ -27,20 +29,25 @@ export default function VoiceAssistant() {
     recognition.maxAlternatives = 1;
     recognition.lang = "en-US";
 
-    recognition.onstart = () => setStatus("listening");
+    recognition.onstart = () => {
+      statusRef.current = "listening"; // Update statusRef directly
+    };
+
     recognition.onend = () => {
-      if (status !== "processing") setStatus("idle");
+      if (statusRef.current !== "processing") {
+        statusRef.current = "idle"; // Update statusRef directly
+      }
     };
 
     recognition.onresult = async (event) => {
-      setStatus("processing");
+      statusRef.current = "processing"; // Update statusRef directly
       const transcript = event.results[0][0].transcript;
       console.log("You said:", transcript);
       const geminiResponse = await callGemini(transcript);
       const reply = geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
       console.log("Gemini said:", reply);
       if (reply) await speak(reply);
-      setStatus("idle");
+      statusRef.current = "idle"; // Update statusRef directly
     };
   }, [userName, tone]);
 
@@ -112,21 +119,21 @@ export default function VoiceAssistant() {
         onChange={(e) => setTone(e.target.value)}
         className="p-2 border rounded w-64"
       >
-        <option value="friendly">🫂🫂</option>
-        <option value="flirty">🫦🫦</option>
-        <option value="supportive">🤗🤗</option>
-        <option value="funny">🤣🤣</option>
-        <option value="romantic">🤗🤗</option>
-        <option value="angry">😡😡</option>
+        <option value="friendly">Friendly 🫂</option>
+        <option value="flirty">Flirty 🫦</option>
+        <option value="supportive">Supportive 🤗</option>
+        <option value="funny">Funny 🤣</option>
+        <option value="romantic">Romantic 😘</option>
+        <option value="angry">Angry 😡</option>
       </select>
 
       {/* Mic Animation */}
       <div className="relative">
         <div
           className={`w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl transition-all duration-300
-          ${status === "listening" ? "bg-red-500 animate-pulse" : ""}
-          ${status === "processing" ? "bg-yellow-500 animate-ping" : ""}
-          ${status === "idle" ? "bg-gray-400" : ""}`}
+          ${statusRef.current === "listening" ? "bg-red-500 animate-pulse" : ""}
+          ${statusRef.current === "processing" ? "bg-yellow-500 animate-ping" : ""}
+          ${statusRef.current === "idle" ? "bg-gray-400" : ""}`}
         >
           🎤
         </div>
@@ -134,15 +141,16 @@ export default function VoiceAssistant() {
 
       {/* Status Text */}
       <p className="text-lg font-medium capitalize">
-        {status === "idle" && "Click Start to speak"}
-        {status === "listening" && "Listening..."}
-        {status === "processing" && "Processing..."}
+        {statusRef.current === "idle" && "Click Start to speak"}
+        {statusRef.current === "listening" && "Listening..."}
+        {statusRef.current === "processing" && "Processing..."}
       </p>
 
       {/* Start Button */}
       <button
         onClick={startRecognition}
         className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        disabled={statusRef.current === "listening" || statusRef.current === "processing"}
       >
         🎧 Start Talking
       </button>
