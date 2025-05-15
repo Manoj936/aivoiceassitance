@@ -9,8 +9,8 @@ const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
 export default function VoiceAssistant() {
   const audioRef = useRef(null);
   const [userName, setUserName] = useState("Manoj");
-  const [tone, setTone] = useState("flirty");
-
+  const [tone, setTone] = useState("supportive"); // friendly | supportive | funny | angry
+  const [yourCommand, setYourCommand] = useState("");
   // Use ref to track status value
   const [status, setStatus] = useState("idle"); // idle | listening | processing
 
@@ -34,6 +34,7 @@ export default function VoiceAssistant() {
       setStatus("processing"); // Update statusRef directly
       const transcript = event.results[0][0].transcript;
       console.log("You said:", transcript);
+      setYourCommand(transcript); // Set the command to state
       const geminiResponse = await callGemini(transcript);
       const reply = geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
       console.log("Gemini said:", reply);
@@ -78,7 +79,7 @@ export default function VoiceAssistant() {
       },
       body: JSON.stringify({
         model: "gpt-4o-mini-tts",
-        voice: "nova",
+        voice: "onyx",
         input: text,
         instructions: openAIcontext(userName, tone),
         response_format: "mp3",
@@ -91,12 +92,15 @@ export default function VoiceAssistant() {
       audioRef.current.src = url;
       await audioRef.current.play();
       setStatus("idle"); // Update statusRef directly
+      setYourCommand(""); // Clear the command after speaking
     }
   }
 
   return (
     <div className="flex flex-col items-center gap-4 p-4">
-      <h2 className="text-xl font-bold">🎙️ Talking with Niko...</h2>
+      <h2 className="text-xl font-bold">
+        Hey I am your coding assitant Mike 🎓
+      </h2>
 
       {/* User Name Input */}
       <input
@@ -104,25 +108,25 @@ export default function VoiceAssistant() {
         value={userName}
         onChange={(e) => setUserName(e.target.value)}
         placeholder="Enter your name"
-        className="p-2 border rounded w-64"
+        className="p-2 border rounded w-64 bg-gray-800 font-bold"
       />
 
       {/* Tone Selector */}
       <select
         value={tone}
         onChange={(e) => setTone(e.target.value)}
-        className="p-2 border rounded w-64"
+        className="p-2 border rounded w-64 text-white bg-gray-800 font-bold"
       >
-        <option value="friendly">Friendly 🫂</option>
-        <option value="flirty">Flirty 🫦</option>
-        <option value="supportive">Supportive 🤗</option>
-        <option value="funny">Funny 🤣</option>
-        <option value="romantic">Romantic 😘</option>
-        <option value="angry">Angry 😡</option>
+        <option value="friendly">Friendly </option>
+
+        <option value="supportive">Supportive </option>
+        <option value="funny">Funny </option>
+
+        <option value="angry">Angry </option>
       </select>
 
       {/* Mic Animation */}
-      <div className="relative">
+      <div className="relative cursor-pointer">
         <div
           className={`w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl transition-all duration-300
           ${status === "listening" ? "bg-red-500 animate-pulse" : ""}
@@ -146,10 +150,14 @@ export default function VoiceAssistant() {
           onClick={startRecognition}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
-          🎧 Start Talking
+          🗣️ Press to start talking
         </button>
       )}
-
+      {yourCommand && (
+        <p className="text-lg font-medium capitalize">
+          You said: {yourCommand}
+        </p>
+      )}
       {/* Audio */}
       <audio ref={audioRef} id="audio" className="hidden" />
     </div>
