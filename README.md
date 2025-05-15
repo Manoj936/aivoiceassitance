@@ -13,3 +13,4 @@ If you are developing a production application, we recommend using TypeScript wi
 
 
 ![Screenshot Description](./ss1.png)
+📽️ [Click here to watch the demo](./ai_coding_assistant.mp4)
